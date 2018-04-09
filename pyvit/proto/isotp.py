@@ -104,7 +104,7 @@ class IsotpInterface:
             # consecutive frame
 
             # check that a FF has been sent
-            if self.data_len == 0:
+            if not hasattr(self, "data_len") or self.data_len == 0:
                 raise ValueError('consecutive frame before first frame')
 
             # frame's sequence number is lower nybble of byte 0
