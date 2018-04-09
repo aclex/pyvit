@@ -177,6 +177,7 @@ class IsotpInterface:
                 if self.debug:
                     print(rx_frame)
                 data = self.parse_frame(rx_frame)
+                start = time.time() # retrigger timeout on good messages
 
             # check timeout, since we may be receiving messages that do not
             # have the required arb_id
