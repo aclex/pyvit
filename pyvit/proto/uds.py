@@ -1367,8 +1367,15 @@ class UDSInterface(IsotpInterface):
         data = self.recv(timeout=timeout)
         if data is None:
             return None
-            
-        return service.decode(data)
+
+        try:
+            resp = self.SERVICES[data[0] - 0x40].Response()
+            resp.decode(data)
+        except KeyError:
+            resp = GenericResponse('Unknown Service', data[0])
+            resp['data'] = data[1:]
+
+        return resp
 
     def decode_request(self, timeout=0.5):
         data = self.recv(timeout=timeout)
