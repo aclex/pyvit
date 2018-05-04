@@ -24,7 +24,7 @@ def _to_bytes(value, padding=0):
     while value > 0:
         res = [value & 0xFF] + res
         value = value >> 8
-        
+
     # add '0' padding to the front of the list if specified
     while padding > 0:
         res = [0x00] + res
@@ -377,7 +377,7 @@ class CommunicationControl:
 class TesterPresent:
     """ TesterPresent service """
     SID = 0x3E
-    
+
     ZeroSubFunction = UDSParameter('ZeroSubFunction', {
         'requestPosRspMsg': 0x00,
         'suppressPosRspMsg': 0x80,
@@ -1037,12 +1037,31 @@ class ClearDiagnosticInformation:
 
 
 class ReadDTCInformation:
-    """ WriteMemoryByAddress service """
+    """ ReadDTCInformation service """
     SID = 0x19
 
     SubFunction = UDSParameter("SubFunction", {
-        "reportSupported": 0x0a,
-        "reportMostRecentConfirmed": 0x0e
+		"reportNumberOfDTCByStatusMask": 0x01,
+		"reportDTCByStatusMask": 0x02,
+		"reportDTCSnapshotIdentification": 0x03,
+		"reportDTCSnapshotRecordByDTCNumber": 0x04,
+		"reportDTCSnapshotRecordByRecordNumber": 0x05,
+		"reportDTCExtendedDataRecordByDTCNumber": 0x06,
+		"reportNumberOfDTCBySeverityMaskRecord": 0x07,
+		"reportDTCBySeverityMaskRecord": 0x08,
+		"reportSeverityInformationOfDTC": 0x09,
+		"reportSupportedDTC": 0x0a,
+		"reportFirstTestFailedDTC": 0x0b,
+		"reportFirstConfirmedDTC": 0x0c,
+		"reportMostRecentTestFailedDTC": 0x0d,
+        "reportMostRecentConfirmed": 0x0e,
+		"reportMirrorMemoryDTCByStatusMask": 0x0f,
+		"reportMirrorMemoryDTCExtendedDataRecordByDTCNumber": 0x10,
+		"reportNumberOfMirrorMemoryDTCByStatusMask": 0x11,
+		"reportNumberOfEmissionRelatedOBDDTCByStatusMask": 0x12,
+		"reportEmissionRelatedOBDDTCByStatusMask": 0x13,
+		"reportDTCFaultDetectionCounter": 0x14,
+		"reportDTCWithPermanentStatus": 0x15
         })
 
     class Response(GenericResponse):
@@ -1061,7 +1080,7 @@ class ReadDTCInformation:
             super(ReadDTCInformation.Request, self).__init__(
                 'ReadDTCInformation',
                 ReadDTCInformation.SID)
-            if sub_function == 0x0a or sub_function == 0x0e:
+            if sub_function > 0 or sub_function < 15:
                 self["subFunction"] = sub_function
 
         def encode(self):
@@ -1195,10 +1214,10 @@ class RequestTransfer:
             # lower nybble is byte length of address
             if self['addressFormatIdentifier'] is None:
                 self['addressFormatIdentifier'] = _byte_size(self['memoryAddress'])
-                
+
             if self['lengthFormatIdentifier'] is None:
                 self['lengthFormatIdentifier'] = _byte_size(self['memorySize'])
-                
+
             address_and_length_format_identifier = (self['addressFormatIdentifier'] & 0x0F)
             address_and_length_format_identifier |= ((self['lengthFormatIdentifier'] << 4) & 0xF0)
 
