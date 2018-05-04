@@ -1041,27 +1041,27 @@ class ReadDTCInformation:
     SID = 0x19
 
     SubFunction = UDSParameter("SubFunction", {
-		"reportNumberOfDTCByStatusMask": 0x01,
-		"reportDTCByStatusMask": 0x02,
-		"reportDTCSnapshotIdentification": 0x03,
-		"reportDTCSnapshotRecordByDTCNumber": 0x04,
-		"reportDTCSnapshotRecordByRecordNumber": 0x05,
-		"reportDTCExtendedDataRecordByDTCNumber": 0x06,
-		"reportNumberOfDTCBySeverityMaskRecord": 0x07,
-		"reportDTCBySeverityMaskRecord": 0x08,
-		"reportSeverityInformationOfDTC": 0x09,
-		"reportSupportedDTC": 0x0a,
-		"reportFirstTestFailedDTC": 0x0b,
-		"reportFirstConfirmedDTC": 0x0c,
-		"reportMostRecentTestFailedDTC": 0x0d,
+        "reportNumberOfDTCByStatusMask": 0x01,
+        "reportDTCByStatusMask": 0x02,
+        "reportDTCSnapshotIdentification": 0x03,
+        "reportDTCSnapshotRecordByDTCNumber": 0x04,
+        "reportDTCSnapshotRecordByRecordNumber": 0x05,
+        "reportDTCExtendedDataRecordByDTCNumber": 0x06,
+        "reportNumberOfDTCBySeverityMaskRecord": 0x07,
+        "reportDTCBySeverityMaskRecord": 0x08,
+        "reportSeverityInformationOfDTC": 0x09,
+        "reportSupportedDTC": 0x0a,
+        "reportFirstTestFailedDTC": 0x0b,
+        "reportFirstConfirmedDTC": 0x0c,
+        "reportMostRecentTestFailedDTC": 0x0d,
         "reportMostRecentConfirmed": 0x0e,
-		"reportMirrorMemoryDTCByStatusMask": 0x0f,
-		"reportMirrorMemoryDTCExtendedDataRecordByDTCNumber": 0x10,
-		"reportNumberOfMirrorMemoryDTCByStatusMask": 0x11,
-		"reportNumberOfEmissionRelatedOBDDTCByStatusMask": 0x12,
-		"reportEmissionRelatedOBDDTCByStatusMask": 0x13,
-		"reportDTCFaultDetectionCounter": 0x14,
-		"reportDTCWithPermanentStatus": 0x15
+        "reportMirrorMemoryDTCByStatusMask": 0x0f,
+        "reportMirrorMemoryDTCExtendedDataRecordByDTCNumber": 0x10,
+        "reportNumberOfMirrorMemoryDTCByStatusMask": 0x11,
+        "reportNumberOfEmissionRelatedOBDDTCByStatusMask": 0x12,
+        "reportEmissionRelatedOBDDTCByStatusMask": 0x13,
+        "reportDTCFaultDetectionCounter": 0x14,
+        "reportDTCWithPermanentStatus": 0x15
         })
 
     class Response(GenericResponse):
@@ -1072,8 +1072,14 @@ class ReadDTCInformation:
 
         def decode(self, data):
             self._check_nrc(data)
-            # TODO
-            self['data'] = data[1:]
+
+            dtc_data = data[3:]
+
+            for i in range(0, len(dtc_data), 4):
+                dtc_code = _from_bytes(dtc_data[i + 0:i + 2])
+                dtc_status = dtc_data[i + 3]
+
+                self[dtc_code] = dtc_status
 
     class Request(GenericRequest):
         def __init__(self, sub_function=0x0a):
