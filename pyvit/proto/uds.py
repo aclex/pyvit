@@ -1040,6 +1040,11 @@ class ReadDTCInformation:
     """ WriteMemoryByAddress service """
     SID = 0x19
 
+    SubFunction = UDSParameter("SubFunction", {
+        "reportSupported": 0x0a,
+        "reportMostRecentConfirmed": 0x0e
+        })
+
     class Response(GenericResponse):
         def __init__(self):
             super(ReadDTCInformation.Response, self).__init__(
@@ -1052,10 +1057,15 @@ class ReadDTCInformation:
             self['data'] = data[1:]
 
     class Request(GenericRequest):
-        def __init__(self):
+        def __init__(self, sub_function=0x0a):
             super(ReadDTCInformation.Request, self).__init__(
                 'ReadDTCInformation',
                 ReadDTCInformation.SID)
+            if sub_function == 0x0a or sub_function == 0x0e:
+                self["subFunction"] = sub_function
+
+        def encode(self):
+            return [self.SID, self["subFunction"]]
 
         def decode(self, data):
             self._check_sid(data)
