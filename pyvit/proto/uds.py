@@ -134,6 +134,7 @@ class NegativeResponseException(Exception):
     def __init__(self, nrc_data):
         self.sid = nrc_data[1]
         self.nrc_code = nrc_data[2]
+        self.nrc_data = nrc_data
 
     def __str__(self):
         return 'NRC: SID = 0x%X: %s' % (self.sid,
