@@ -29,11 +29,16 @@ class IsotpInterface:
         self.data_byte_count = 0
         self.sequence_number = 0
 
+        self.reorder_buffer = {}
+        self.round_counter = 0
+
     def _end_msg(self):
         # finish reading a message
         tmp = self.data
         self.data = []
         self.data_len = 0
+        self.reorder_buffer = {}
+        self.round_counter = 0
         return tmp
 
     def _set_filter(self):
@@ -103,33 +108,58 @@ class IsotpInterface:
         elif pci_type == 2:
             # consecutive frame
 
-            # check that a FF has been sent
-            if not hasattr(self, "data_len") or self.data_len == 0:
-                raise ValueError('consecutive frame before first frame')
-
             # frame's sequence number is lower nybble of byte 0
             frame_sequence_number = frame.data[0] & 0xF
 
-            # check the sequence number
-            if frame_sequence_number != self.sequence_number:
-                raise ValueError('invalid sequence number!')
+            payload = frame.data[:]
 
-            bytes_remaining = self.data_len - self.data_byte_count
+            # check if the frame came out of order and save it for future use
+            if (not hasattr(self, "data_len") or
+                self.data_len == 0 or
+                frame_sequence_number != self.sequence_number):
 
-            # grab data bytes from this message
-            for i in range(1, min(bytes_remaining, 7) + 1):
-                self.data.append(frame.data[i])
-                self.data_byte_count = self.data_byte_count + 1
+                round_counter = (
+                    self.round_counter
+                    if frame_sequence_number > self.sequence_number else
+                    self.round_counter + 1)
 
-            if self.data_byte_count == self.data_len:
-                return self._end_msg()
-            elif self.data_byte_count > self.data_len:
-                raise ValueError('data length mismatch')
+                frame_idx = (round_counter << 4) + frame_sequence_number
+                self.reorder_buffer.update({ frame_idx: payload })
 
-            # wrap around when sequence number reaches 0xF
-            self.sequence_number = self.sequence_number + 1
-            if self.sequence_number > 0xF:
-                self.sequence_number = 0
+                if len(self.reorder_buffer) > 0x0fff:
+                    raise ValueError("frame is reordered too much")
+
+                return
+
+            while (payload is not None):
+                bytes_remaining = self.data_len - self.data_byte_count
+
+                # grab data bytes from this message
+                for i in range(1, min(bytes_remaining, 7) + 1):
+                    self.data.append(payload[i])
+                    self.data_byte_count = self.data_byte_count + 1
+
+                if self.data_byte_count == self.data_len:
+                    return self._end_msg()
+                elif self.data_byte_count > self.data_len:
+                    raise ValueError('data length mismatch')
+
+                # wrap around when sequence number reaches 0xF
+                self.sequence_number = self.sequence_number + 1
+                if self.sequence_number > 0xF:
+                    self.sequence_number = 0
+                    self.round_counter += 1
+
+                frame_idx = (self.round_counter << 4) + self.sequence_number
+
+                if frame_idx in self.reorder_buffer:
+                    frame_sequence_number = self.sequence_number
+                    payload = self.reorder_buffer[frame_idx]
+
+                    del self.reorder_buffer[frame_idx]
+
+                else:
+                    payload = None
 
         elif pci_type == 3:
             # ignore received control frames
