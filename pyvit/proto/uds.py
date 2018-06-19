@@ -1083,15 +1083,21 @@ class ReadDTCInformation:
                 self[dtc_code] = dtc_status
 
     class Request(GenericRequest):
-        def __init__(self, sub_function=0x0a):
+        def __init__(self, sub_function=0x0a, arg=None):
             super(ReadDTCInformation.Request, self).__init__(
                 'ReadDTCInformation',
                 ReadDTCInformation.SID)
             if sub_function > 0 or sub_function < 15:
                 self["subFunction"] = sub_function
+                self["arg"] = arg
 
         def encode(self):
-            return [self.SID, self["subFunction"]]
+            data = [self.SID, self["subFunction"]]
+
+            if self["arg"] is not None:
+                data.append(self["arg"])
+
+            return data
 
         def decode(self, data):
             self._check_sid(data)
