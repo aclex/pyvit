@@ -55,7 +55,9 @@ class Dispatcher:
             raise Exception('dispatcher not running')
 
         self._recv_process.terminate()
+        self._recv_process.join()
         self._send_process.terminate()
+        self._send_process.join()
         self._device.stop()
         self._running = False
 
