@@ -1074,13 +1074,19 @@ class ReadDTCInformation:
         def decode(self, data):
             self._check_nrc(data)
 
-            dtc_data = data[3:]
+            try:
+                dtc_data = data[3:]
 
-            for i in range(0, len(dtc_data), 4):
-                dtc_code = _from_bytes(dtc_data[i + 0:i + 2])
-                dtc_status = dtc_data[i + 3]
+                for i in range(0, len(dtc_data), 4):
+                    dtc_code = _from_bytes(dtc_data[i + 0:i + 2])
+                    dtc_status = dtc_data[i + 3]
 
-                self[dtc_code] = dtc_status
+                    self[dtc_code] = dtc_status
+
+            except IndexError:
+                data_str = ' '.join([("%.02x" % b) for b in data])
+                raise ValueError("Unexpected data length and/or format."
+                                 " Response data is: \"%s\"" % data_str)
 
     class Request(GenericRequest):
         def __init__(self, sub_function=0x0a, arg=None):
